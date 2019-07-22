@@ -30,18 +30,20 @@ import android.R.attr.data
 import android.content.Context
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
+import com.rikkei.tra_02t0114camera.constant.Define
 
 
 class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var mcamera: Camera? = null
     private var msurfaceView: SurfaceView? = null
     private var msurfaceHolder: SurfaceHolder? = null
+
     private var captureImageCallback: Camera.PictureCallback? = null
     private var rawCallback: Camera.PictureCallback? = null
     private var shutterCallback: Camera.ShutterCallback? = null
+
+
     private var frontCam: Boolean = false
-    private val MY_CAMERA_REQUEST_CODE = 100
-    private var ivPhoto: ImageView? = null
     private val mediaRecoder by lazy {
         MediaRecorder()
     }
@@ -57,21 +59,21 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private fun init() {
-        ivPhoto = findViewById(R.id.ivPhoto)
         msurfaceView = findViewById(R.id.surfaceView)
         msurfaceHolder = msurfaceView!!.holder
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
             && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(
                 arrayOf(Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO),
-                MY_CAMERA_REQUEST_CODE
+                Define.MY_CAMERA_REQUEST_CODE
             )
         } else {
             msurfaceHolder!!.addCallback(this)
             msurfaceHolder!!.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
+        captureImage()
         ivRotateCamera.setOnClickListener { roTateCamera() }
-        ivCamera.setOnClickListener { captureImage() }
+        ivCamera.setOnClickListener { saveImage() }
         ivVideo.setOnClickListener { openVideo() }
         frontCam = false
     }
@@ -149,45 +151,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         /** Handles data for jpeg picture  */
         shutterCallback = Camera.ShutterCallback { Log.i("Log", "onShutter'd") }
         captureImageCallback = Camera.PictureCallback { data, camera ->
-            //                val pictureFile = getOutputMediaFile() ?: return@PictureCallback
-
-//            val pictureFileDir = getDir("images", 0)
-//
-//            if (!pictureFileDir.exists() && !pictureFileDir.mkdirs()) {
-//                Toast.makeText(
-//                    applicationContext, "Can't create directory to save image.",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//            }
-//
-//            val dateFormat = SimpleDateFormat("yyyymmddhhmmss")
-//            val date = dateFormat.format(Date())
-//            val photoFile = "Picture_$date.jpg"
-//
-//            val filename = pictureFileDir.path + File.separator + photoFile
-//
-//            val pictureFile = File(filename)
-//
-//            try {
-//                val fos = FileOutputStream(pictureFile)
-//                fos.write(data)
-//                fos.close()
-//                Toast.makeText(
-//                    applicationContext, "New Image saved:$photoFile",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//
-//                //Insert image into gallery
-//                val bitmap =
-//                    BitmapFactory.decodeFile(pictureFile.path)
-//                MediaStore.Images.Media.insertImage(contentResolver, bitmap, photoFile, "My Image")
-//            } catch (error: Exception) {
-//                Toast.makeText(
-//                    applicationContext, "Image could not be saved.",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//            }
-            var pictureFile = getOutputMediaFile()
+            var pictureFile: File? = getOutputMediaFile() ?: return@PictureCallback
             try {
                 val fos = FileOutputStream(pictureFile)
                 fos.write(data)
@@ -197,8 +161,15 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
             } catch (e: IOException) {
             }
         }
-        mcamera!!.takePicture(shutterCallback, rawCallback, captureImageCallback)
-        refreshCamera()
+
+
+    }
+    private fun  saveImage(){
+        try {
+            mcamera!!.takePicture(shutterCallback, rawCallback, captureImageCallback)
+            refreshCamera()
+        } catch (e: Exception) {
+        }
 
     }
 
@@ -298,6 +269,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         mcamera?.release()
     }
 
+
     override fun surfaceCreated(holder: SurfaceHolder) {
         mcamera = Camera.open()
         val parameters: Camera.Parameters = mcamera!!.parameters
@@ -337,7 +309,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            MY_CAMERA_REQUEST_CODE -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Define.MY_CAMERA_REQUEST_CODE -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 msurfaceHolder!!.addCallback(this)
                 msurfaceHolder!!.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
             } else {
